@@ -1,0 +1,23 @@
+plugins {
+    id "java-library"
+    id "maven-publish"
+}
+
+version = VERSION_NAME
+group = GROUP
+
+dependencies {
+    // com.sun.tools.javac.code.Attribute
+    implementation files("${System.properties['java.home']}/../lib/tools.jar")
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = GROUP
+            artifactId = POM_ARTIFACT_ID
+            version = VERSION_NAME
+            from components.java
+        }
+    }
+}

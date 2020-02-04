@@ -1,0 +1,25 @@
+plugins {
+    id "java-gradle-plugin"
+    id "groovy"
+    id "maven-publish"
+}
+
+dependencies {
+    compileOnly gradleApi()
+    compileOnly "org.gradle:gradle-core:5.6.2"
+    compileOnly "com.android.tools.build:gradle:${GRADLE_BUILD_TOOLS}"
+}
+
+version = VERSION_NAME
+group = GROUP
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = GROUP
+            artifactId = POM_ARTIFACT_ID
+            version = VERSION_NAME
+            from components.java
+        }
+    }
+}

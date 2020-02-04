@@ -1,0 +1,23 @@
+buildscript {
+    repositories {
+        jcenter()
+        google()
+        mavenCentral()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.8.0'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        google()
+        mavenCentral()
+        mavenLocal()
+        maven {
+            url "https://repo.gradle.org/gradle/libs-releases-local"
+        }
+    }
+}
