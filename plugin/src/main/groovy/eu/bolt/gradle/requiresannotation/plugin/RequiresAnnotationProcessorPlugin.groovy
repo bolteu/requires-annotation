@@ -3,15 +3,11 @@ package eu.bolt.gradle.requiresannotation.plugin
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import org.gradle.api.tasks.compile.JavaCompile
 
 class RequiresAnnotationProcessorPlugin implements Plugin<Project> {
-
-    private static final Logger LOG = Logging.getLogger(RequiresAnnotationProcessorPlugin.class)
 
     @Override
     void apply(Project project) {
@@ -34,10 +30,9 @@ class RequiresAnnotationProcessorPlugin implements Plugin<Project> {
             def processorOptions = project.requiresAnnotationProcessor.process
             if (processorOptions) {
                 processorOptions.each { key, value ->
-                    options.compilerArgs << "-Aprocess_${key}=${value}"
+                    options.compilerArgs << "-Aprocess_${key}=${value.join("_")}"
                 }
             }
-            LOG.debug("RequiresAnnotationProcessorCompileTask options.compilerArgs ${options.compilerArgs}")
         }
     }
 }

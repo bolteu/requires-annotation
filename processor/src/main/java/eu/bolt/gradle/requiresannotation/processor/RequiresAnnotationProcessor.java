@@ -6,20 +6,34 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
-import java.util.*;
+import java.util.List;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class RequiresAnnotationProcessor extends AbstractProcessor {
     private static final String PLUGIN_PARAM_EXTRA_PROCESSOR = "process";
     private static final String PLUGIN_PARAM_EXTRA_PROCESSOR_SEPARATOR = "_";
     private static final String REQUIRES_ANNOTATION = "eu.bolt.gradle.requiresannotation.processor.RequiresAnnotation";
-    private static final List<String> IGNORED_ELEMENT_TYPES = Arrays.asList(String.class.getName(),
-            Integer.class.getName(), Long.class.getName(), Float.class.getName(), Double.class.getName(),
-            Short.class.getName(), Byte.class.getName(), Object.class.getName());
+    private static final List<String> IGNORED_ELEMENT_PACKAGES = Arrays.asList("java.lang", "java.util", "android.os", "com.google");
+    private static final int DEPT_LEVEL_METHOD = 0;
+    private static final int DEPT_LEVEL_CLASS = 1;
 
-    private final Map<String, String> extraAnnotationsToScan = new HashMap<>();
+    private final Map<String, List<String>> extraAnnotationsToScan = new HashMap<>();
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -31,7 +45,7 @@ public class RequiresAnnotationProcessor extends AbstractProcessor {
                 if (envOptions.get(key) != null && key.contains(PLUGIN_PARAM_EXTRA_PROCESSOR)) {
                     final String[] keySplit = key.split(PLUGIN_PARAM_EXTRA_PROCESSOR_SEPARATOR);
                     if (keySplit.length > 1) {
-                        extraAnnotationsToScan.put(keySplit[1], value);
+                        extraAnnotationsToScan.put(keySplit[1], Arrays.asList(value.split(PLUGIN_PARAM_EXTRA_PROCESSOR_SEPARATOR)));
                     }
                 }
             }
@@ -78,7 +92,6 @@ public class RequiresAnnotationProcessor extends AbstractProcessor {
                                                 ignoreClasses.add(attribute.getValue().toString());
                                             }
                                             break;
-
                                     }
                                 }
                             }
@@ -89,35 +102,15 @@ public class RequiresAnnotationProcessor extends AbstractProcessor {
                         processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "RequiresAnnotation requires at least one annotation as 'requires'");
                         return false;
                     }
-
-                    if (element.getKind() == ElementKind.CLASS) {
-                        final List<ExecutableElement> executableElements = ElementFilter.methodsIn(element.getEnclosedElements());
-                        if (!executableElements.isEmpty()) {
-                            for (ExecutableElement executableElement : executableElements) {
-                                handleMethodElement(executableElement, requiredAnnotations, ignoreClasses);
-                            }
-                        }
-                    } else if (element.getKind() == ElementKind.METHOD) {
-                        handleMethodElement((ExecutableElement) element, requiredAnnotations, ignoreClasses);
-                    }
+                    handleElement(element, requiredAnnotations, ignoreClasses);
                 }
             }
 
             for (String extraAnnotationToScan : extraAnnotationsToScan.keySet()) {
-                final String extraAnnotationToRequire = extraAnnotationsToScan.get(extraAnnotationToScan);
                 elements = roundEnv.getElementsAnnotatedWith(processingEnv.getElementUtils().getTypeElement(extraAnnotationToScan));
                 if (elements != null && !elements.isEmpty()) {
                     for (Element element : elements) {
-                        if (element.getKind() == ElementKind.CLASS) {
-                            final List<ExecutableElement> executableElements = ElementFilter.methodsIn(element.getEnclosedElements());
-                            if (!executableElements.isEmpty()) {
-                                for (ExecutableElement executableElement : executableElements) {
-                                    handleMethodElement(executableElement, Collections.singletonList(extraAnnotationToRequire), Collections.emptyList());
-                                }
-                            }
-                        } else if (element.getKind() == ElementKind.METHOD) {
-                            handleMethodElement((ExecutableElement) element, Collections.singletonList(extraAnnotationToRequire), Collections.emptyList());
-                        }
+                        handleElement(element, extraAnnotationsToScan.get(extraAnnotationToScan), Collections.emptyList());
                     }
                 }
             }
@@ -126,47 +119,75 @@ public class RequiresAnnotationProcessor extends AbstractProcessor {
         return true;
     }
 
+    private void handleElement(Element element, List<String> requiredAnnotations, List<String> ignoreClasses) {
+        if (element.getKind() == ElementKind.CLASS) {
+            final List<ExecutableElement> executableElements = ElementFilter.methodsIn(element.getEnclosedElements());
+            if (!executableElements.isEmpty()) {
+                for (ExecutableElement executableElement : executableElements) {
+                    handleMethodElement(executableElement, requiredAnnotations, ignoreClasses, DEPT_LEVEL_CLASS);
+                }
+            }
+        } else if (element.getKind() == ElementKind.METHOD) {
+            handleMethodElement((ExecutableElement) element, requiredAnnotations, ignoreClasses, DEPT_LEVEL_METHOD);
+        }
+    }
 
-    private void handleMethodElement(ExecutableElement execElement, List<String> requiredAnnotations, List<String> ignoreClasses) {
+    private void handleMethodElement(ExecutableElement execElement, List<String> requiredAnnotations, List<String> ignoreClasses, int deptLevel) {
         final List<? extends VariableElement> parameters = execElement.getParameters();
         if (parameters != null && !parameters.isEmpty()) {
             for (VariableElement paramElement : parameters) {
-                checkParamElementForAnnotations(execElement, paramElement, requiredAnnotations, ignoreClasses);
+                checkParamElementForAnnotations(execElement, paramElement, requiredAnnotations, ignoreClasses, deptLevel);
             }
         }
     }
 
-    private void checkParamElementForAnnotations(ExecutableElement execElement, VariableElement paramElement, List<String> requiredAnnotations, List<String> ignoreClasses) {
-        if (shouldCheckAnnotation(paramElement, ignoreClasses)) {
-            final TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(paramElement.asType().toString());
-            if (typeElement != null) {
-                final List<? extends Element> enclosedElements = typeElement.getEnclosedElements();
-                if (enclosedElements != null && !enclosedElements.isEmpty()) {
-                    for (Element enclosedElement : enclosedElements) {
-                        if (enclosedElement.getKind() == ElementKind.FIELD) {
-                            boolean foundRequiredAnnotation = false;
-                            final List<? extends AnnotationMirror> annotationMirrors = enclosedElement.getAnnotationMirrors();
-                            if (annotationMirrors != null && !annotationMirrors.isEmpty()) {
-                                for (AnnotationMirror annotationMirror : annotationMirrors) {
-                                    if (requiredAnnotations.contains(annotationMirror.getAnnotationType().asElement().asType().toString())) {
-                                        foundRequiredAnnotation = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (!foundRequiredAnnotation) {
-                                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, paramElement + " at " + execElement + " should have one of these annotations: " + requiredAnnotations, paramElement);
+    private void checkParamElementForAnnotations(ExecutableElement execElement, VariableElement paramElement, List<String> requiredAnnotations, List<String> ignoreClasses, int deptLevel) {
+        final List<String> visitedClassesRecursively = new ArrayList<>();
+        checkParamElementForAnnotationsSafe(execElement, paramElement, requiredAnnotations, ignoreClasses, deptLevel, visitedClassesRecursively);
+    }
+
+    private void checkParamElementForAnnotationsSafe(ExecutableElement execElement, VariableElement paramElement, List<String> requiredAnnotations, List<String> ignoreClasses, int deptLevel, List<String> visitedClassesRecursively) {
+        if (!paramElement.getModifiers().contains(Modifier.STATIC) && !paramElement.getModifiers().contains(Modifier.TRANSIENT) && !ignoreClasses.contains(paramElement.getSimpleName().toString())) {
+            // if this is not a trusted type, we should also check inside of this class for annotations
+            if (!paramElement.asType().getKind().isPrimitive() && !checkIsJavaTypes(paramElement.asType().toString()) && !visitedClassesRecursively.contains(paramElement.asType().toString())) {
+                visitedClassesRecursively.add(paramElement.asType().toString());
+                final TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(paramElement.asType().toString());
+                if (typeElement != null) {
+                    final List<? extends Element> enclosedElements = typeElement.getEnclosedElements();
+                    if (enclosedElements != null && !enclosedElements.isEmpty()) {
+                        for (Element enclosedElement : enclosedElements) {
+                            if (enclosedElement.getKind() == ElementKind.FIELD) {
+                                checkParamElementForAnnotationsSafe(execElement, (VariableElement) enclosedElement, requiredAnnotations, ignoreClasses, deptLevel + 1, visitedClassesRecursively);
                             }
                         }
                     }
                 }
             }
+            // if deptLevel is 0, that means we are on the method parameter level which we should ignore its annotations.
+            if (deptLevel > 0) {
+                boolean foundRequiredAnnotation = false;
+                final List<? extends AnnotationMirror> annotationMirrors = paramElement.getAnnotationMirrors();
+                if (annotationMirrors != null && !annotationMirrors.isEmpty()) {
+                    for (AnnotationMirror annotationMirror : annotationMirrors) {
+                        if (requiredAnnotations.contains(annotationMirror.getAnnotationType().asElement().asType().toString())) {
+                            foundRequiredAnnotation = true;
+                            break;
+                        }
+                    }
+                }
+                if (!foundRequiredAnnotation) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, paramElement + " at " + execElement + " should have one of these annotations: " + requiredAnnotations, paramElement);
+                }
+            }
         }
     }
 
-    private boolean shouldCheckAnnotation(VariableElement paramElement, List<String> ignoreClasses) {
-        return !paramElement.asType().getKind().isPrimitive()
-                && !IGNORED_ELEMENT_TYPES.contains(paramElement.asType().toString())
-                && !ignoreClasses.contains(paramElement.getSimpleName().toString());
+    private boolean checkIsJavaTypes(String packageName) {
+        for (String ignoredElementPackage : IGNORED_ELEMENT_PACKAGES) {
+            if (packageName.contains(ignoredElementPackage)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
