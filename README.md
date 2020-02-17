@@ -81,7 +81,8 @@ buildscript {
 You can configure Requires Annotation using this plugin from module's `build.gradle` file. With the configuration, the annotation processor can also process the other annotations.
 ```groovy
 requiresAnnotationProcessor {
-  process = ['TARGET_ANNOTATION_PACKAGE_NAME': ['REQUIRED_ANNOTATION_PACKAGE_NAMES']]
+  requires = ['TARGET_ANNOTATION_PACKAGE_NAME': ['REQUIRED_ANNOTATION_PACKAGE_NAMES']]
+  ignore = ['IGNORED_PACKAGE_NAMES']
 }
 ```
 
@@ -103,7 +104,8 @@ If we make an API call with this model, most probably it will fail on the releas
 So we need to check all the class fields used in the methods annotated with `@POST` for the `@SerializedName` annotation. Requires Annotation can do this check with the following configuration on the module's `build.gradle` file:
 ````groovy
 requiresAnnotationProcessor {
-  process = ['retrofit2.http.POST': ['com.google.gson.annotations.SerializedName']]
+  requires = ['retrofit2.http.POST': ['com.google.gson.annotations.SerializedName']]
+  ignore = ['com.example.MyIgnoreClass']
 }
 ````
 

@@ -1,4 +1,4 @@
-package eu.bolt.gradle.requiresannotation.processor;
+package eu.bolt.gradle.requiresannotation.annotation;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;

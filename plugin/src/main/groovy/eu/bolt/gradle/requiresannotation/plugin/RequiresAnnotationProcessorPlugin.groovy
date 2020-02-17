@@ -27,11 +27,16 @@ class RequiresAnnotationProcessorPlugin implements Plugin<Project> {
         project.tasks.withType(JavaCompile) {
             // this option break the build stage: :kaptGenerateStubsDebugKotlin
 //            options.compilerArgs << "-proc:only"
-            def processorOptions = project.requiresAnnotationProcessor.process
-            if (processorOptions) {
-                processorOptions.each { key, value ->
-                    options.compilerArgs << "-Aprocess_${key}=${value.join("_")}"
+            def requiresOptions = project.requiresAnnotationProcessor.requires
+            if (requiresOptions) {
+                requiresOptions.each { key, value ->
+                    options.compilerArgs << "-Arequires_${key}=${value.join("_")}"
                 }
+            }
+
+            def ignoreOptions = project.requiresAnnotationProcessor.ignore
+            if (ignoreOptions) {
+                options.compilerArgs << "-Aignore=${ignoreOptions.join("_")}"
             }
         }
     }
