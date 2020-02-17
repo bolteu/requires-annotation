@@ -1,6 +1,6 @@
 [![Bolt](https://bolt.eu/favicon.ico)](https://bolt.eu/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/nexus/r/eu.bolt/requiresannotation.plugin?server=https%3A%2F%2Foss.sonatype.org)](https://opensource.org/licenses/MIT)
+![Version](https://img.shields.io/nexus/r/eu.bolt/requiresannotation.plugin?server=https%3A%2F%2Foss.sonatype.org)
 
 
 # Requires Annotation and Plugin
@@ -17,7 +17,7 @@ To use the annotation:
 - Add maven repository `maven { url "https://oss.sonatype.org/content/repositories/releases/" }` as a repository source.
 - Add dependency as an implementation and annotation processor:
 ```groovy
-implementation "eu.bolt:requiresannotation.processor:1.0"
+implementation "eu.bolt:requiresannotation.annotation:1.0"
 annotationProcessor "eu.bolt:requiresannotation.processor:1.0"
 // lets declare both annotationProcessor and kapt of them https://issuetracker.google.com/issues/80270236
 kapt "eu.bolt:requiresannotation.processor:1.0"
