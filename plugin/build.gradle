@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020 Bolt Technology OÜ. All rights reserved.
+ */
+
 plugins {
     id "java-gradle-plugin"
     id "groovy"

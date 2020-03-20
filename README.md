@@ -1,6 +1,7 @@
 [![Bolt](https://bolt.eu/favicon.ico)](https://bolt.eu/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/nexus/r/eu.bolt/requiresannotation.plugin?server=https%3A%2F%2Foss.sonatype.org)
+![Version Nexus](https://img.shields.io/nexus/r/eu.bolt/requiresannotation.plugin?server=https%3A%2F%2Foss.sonatype.org)
+![Version Maven Centraal](https://img.shields.io/maven-central/v/eu.bolt/requiresannotation.annotation)
 
 
 # Requires Annotation and Plugin
@@ -14,13 +15,13 @@ It is a developer mistake to forget some required annotation but this mistake ca
 ## Requires Annotation
 ### Using the annotation processor
 To use the annotation:
-- Add maven repository `maven { url "https://oss.sonatype.org/content/repositories/releases/" }` as a repository source.
+- Add maven central repository `mavenCentral()`.
 - Add dependency as an implementation and annotation processor:
 ```groovy
-implementation "eu.bolt:requiresannotation.annotation:1.0"
-annotationProcessor "eu.bolt:requiresannotation.processor:1.0"
+implementation "eu.bolt:requiresannotation.annotation:1.2"
+annotationProcessor "eu.bolt:requiresannotation.processor:1.2"
 // lets declare both annotationProcessor and kapt of them https://issuetracker.google.com/issues/80270236
-kapt "eu.bolt:requiresannotation.processor:1.0"
+kapt "eu.bolt:requiresannotation.processor:1.2"
 ```
 
 ### Configuring the Annotation using the plugin
@@ -59,19 +60,15 @@ When we start the build, it will be failed because of the `someStringMethod` and
 ## Requires Annotation Plugin
 ### Using the plugin
 The plugin of the annotation allows you to use other annotations also for the check. To use the plugin, you must first apply it and then configure the parameter described below. To apply the plugin in the 
-- Add maven repository `maven { url "https://oss.sonatype.org/content/repositories/releases/" }` to the `buildscript` in the root project's `build.gradle`
-- Add dependency `classpath "eu.bolt:requiresannotation.plugin:1.0"` to the `buildscript` in the root project's `build.gradle`
+- Add maven central repository `mavenCentral()` to the `buildscript` in the root project's `build.gradle`
+- Add dependency `classpath "eu.bolt:requiresannotation.plugin:1.2"` to the `buildscript` in the root project's `build.gradle`
 ```groovy
 buildscript {
     repositories {
-        ...
-        maven { url 'https://oss.sonatype.org/content/repositories/releases/' }
-        ...
+        mavenCentral()
     }
     dependencies {
-        ...
-        classpath "eu.bolt:requiresannotation.plugin:1.0"
-        ...
+        classpath "eu.bolt:requiresannotation.plugin:1.2"
     }
 }
 ```

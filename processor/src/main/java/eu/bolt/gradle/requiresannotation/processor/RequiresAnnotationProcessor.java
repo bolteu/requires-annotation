@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020 Bolt Technology OÜ. All rights reserved.
+ */
+
 package eu.bolt.gradle.requiresannotation.processor;
 
 import com.sun.tools.javac.code.Attribute;
@@ -23,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

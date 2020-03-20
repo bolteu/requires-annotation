@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020 Bolt Technology OÜ. All rights reserved.
+ */
+
 package eu.bolt.gradle.requiresannotation.plugin
 
 class RequiresAnnotationProcessorPluginExtension {
